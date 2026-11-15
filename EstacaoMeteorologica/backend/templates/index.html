@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estação Meteorológica Inteligente</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            min-height: 100vh;
+            padding: 28px 18px;
+            color: #f8fafc;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        }
+
+        .container { width: 100%; max-width: 1100px; margin: auto; }
+
+        header { text-align: center; margin-bottom: 28px; }
+        header h1 {
+            font-size: clamp(1.7rem, 4vw, 2.5rem);
+            margin-bottom: 9px;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        header p { color: #cbd5e1; }
+
+        .status {
+            display: inline-block;
+            margin-top: 14px;
+            padding: 7px 15px;
+            border: 1px solid rgba(56, 189, 248, .35);
+            border-radius: 20px;
+            color: #7dd3fc;
+            background: rgba(56, 189, 248, .1);
+            font-size: .85rem;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 24px 0;
+            flex-wrap: wrap;
+        }
+        nav button, .periodo button {
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 9px;
+            padding: 10px 17px;
+            color: #cbd5e1;
+            background: rgba(30,41,59,.8);
+            cursor: pointer;
+        }
+        nav button.active, .periodo button.active {
+            color: white;
+            border-color: #38bdf8;
+            background: rgba(14,165,233,.22);
+        }
+
+        .view { display: none; }
+        .view.active { display: block; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 17px;
+        }
+        .card, .panel {
+            padding: 23px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 15px;
+            background: rgba(30,41,59,.78);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,.25);
+        }
+        .card i { font-size: 2rem; margin-bottom: 13px; }
+        .card h2 { color: #94a3b8; font-size: .88rem; font-weight: 500; text-transform: uppercase; letter-spacing: .7px; }
+        .value { margin-top: 10px; font-size: 2rem; font-weight: 700; overflow-wrap: anywhere; }
+        .unit { font-size: 1rem; color: #cbd5e1; }
+        .temp i { color: #fb7185; }
+        .humidity i { color: #38bdf8; }
+        .pressure i { color: #a78bfa; }
+        .light i { color: #facc15; }
+        .air i { color: #4ade80; }
+
+        .meta { margin-top: 20px; color: #94a3b8; text-align: center; font-size: .85rem; }
+        .note { margin-top: 14px; color: #fbbf24; font-size: .82rem; line-height: 1.5; }
+
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 17px;
+        }
+        .history-header h2 { font-size: 1.2rem; }
+        .periodo { display: flex; gap: 8px; flex-wrap: wrap; }
+        .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 17px; }
+        .chart-panel { min-height: 300px; }
+        .chart-panel h3 { margin-bottom: 18px; color: #cbd5e1; font-size: 1rem; }
+        .chart-wrap { position: relative; height: 235px; }
+        .empty { color: #94a3b8; padding: 30px 0; text-align: center; }
+        footer { margin-top: 35px; text-align: center; color: #64748b; font-size: .82rem; }
+
+        @media (max-width: 520px) {
+            body { padding: 20px 12px; }
+            .card { padding: 19px; }
+            .value { font-size: 1.7rem; }
+            .history-header { align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1><i class="fa-solid fa-microchip"></i> Estação Meteorológica Inteligente</h1>
+        <p>Monitoramento ambiental urbano</p>
+        <div id="status" class="status">Verificando conexão...</div>
+    </header>
+
+    <nav>
+        <button id="btn-dashboard" class="active" onclick="mostrarTela('dashboard')">
+            <i class="fa-solid fa-gauge-high"></i> Visão geral
+        </button>
+        <button id="btn-historico" onclick="mostrarTela('historico')">
+            <i class="fa-solid fa-chart-line"></i> Histórico
+        </button>
+    </nav>
+
+    <main>
+        <section id="dashboard" class="view active">
+            <div class="grid">
+                <article class="card temp">
+                    <i class="fa-solid fa-temperature-half"></i>
+                    <h2>Temperatura DHT11</h2>
+                    <div class="value"><span id="temperatura-dht">--</span><span class="unit"> °C</span></div>
+                </article>
+
+                <article class="card temp">
+                    <i class="fa-solid fa-temperature-three-quarters"></i>
+                    <h2>Temperatura BMP280</h2>
+                    <div class="value"><span id="temperatura-bmp">--</span><span class="unit"> °C</span></div>
+                </article>
+
+                <article class="card humidity">
+                    <i class="fa-solid fa-droplet"></i>
+                    <h2>Umidade</h2>
+                    <div class="value"><span id="umidade">--</span><span class="unit"> %</span></div>
+                </article>
+
+                <article class="card pressure">
+                    <i class="fa-solid fa-gauge"></i>
+                    <h2>Pressão atmosférica</h2>
+                    <div class="value"><span id="pressao">--</span><span class="unit"> hPa</span></div>
+                </article>
+
+                <article class="card light">
+                    <i class="fa-solid fa-sun"></i>
+                    <h2>Luminosidade</h2>
+                    <div class="value" id="luminosidade">--</div>
+                </article>
+
+                <article class="card air">
+                    <i class="fa-solid fa-wind"></i>
+                    <h2>MQ-135 — leitura bruta</h2>
+                    <div class="value" id="mq135">--</div>
+                    <p class="note">Valor ADC bruto; não representa ppm nem uma classificação calibrada da qualidade do ar.</p>
+                </article>
+            </div>
+            <p class="meta">Última medição registrada: <span id="data-hora">--</span></p>
+            <p class="meta">Total de medições armazenadas: <span id="total">--</span></p>
+        </section>
+
+        <section id="historico" class="view">
+            <div class="history-header">
+                <h2>Histórico das medições</h2>
+                <div class="periodo">
+                    <button class="active" data-dias="1" onclick="carregarHistorico(1, this)">24 horas</button>
+                    <button data-dias="3" onclick="carregarHistorico(3, this)">3 dias</button>
+                    <button data-dias="7" onclick="carregarHistorico(7, this)">7 dias</button>
+                </div>
+            </div>
+
+            <div id="mensagem-historico" class="empty">Carregando histórico...</div>
+            <div id="graficos" class="charts" style="display:none;">
+                <article class="panel chart-panel">
+                    <h3>Temperatura (°C)</h3>
+                    <div class="chart-wrap"><canvas id="grafico-temperatura"></canvas></div>
+                </article>
+                <article class="panel chart-panel">
+                    <h3>Umidade (%)</h3>
+                    <div class="chart-wrap"><canvas id="grafico-umidade"></canvas></div>
+                </article>
+                <article class="panel chart-panel">
+                    <h3>Pressão atmosférica (hPa)</h3>
+                    <div class="chart-wrap"><canvas id="grafico-pressao"></canvas></div>
+                </article>
+                <article class="panel chart-panel">
+                    <h3>Leitura bruta do MQ-135</h3>
+                    <div class="chart-wrap"><canvas id="grafico-mq135"></canvas></div>
+                </article>
+            </div>
+            <p class="note">A luminosidade é apresentada como estado (CLARO/ESCURO), por isso não aparece como linha numérica neste conjunto de gráficos.</p>
+        </section>
+    </main>
+
+    <footer>Projeto acadêmico — Ciência da Computação — UNIP</footer>
+</div>
+
+<script>
+    // Guarda as instâncias dos gráficos para podermos atualizá-los sem duplicá-los.
+    const graficosCriados = {};
+
+    // Alterna entre a tela principal e a tela de histórico.
+    function mostrarTela(tela) {
+        document.querySelectorAll('.view').forEach(secao => secao.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(botao => botao.classList.remove('active'));
+
+        document.getElementById(tela).classList.add('active');
+        document.getElementById('btn-' + tela).classList.add('active');
+
+        if (tela === 'historico') {
+            carregarHistorico(7, document.querySelector('[data-dias="7"]'));
+        }
+    }
+
+    // Busca a última medição salva no banco e atualiza os cards.
+    async function atualizarDashboard() {
+        try {
+            const resposta = await fetch('/api/ultima');
+            if (!resposta.ok) throw new Error('Não foi possível consultar a última medição.');
+
+            const dados = await resposta.json();
+            document.getElementById('temperatura-dht').textContent = Number(dados.temperatura_dht).toFixed(1);
+            document.getElementById('temperatura-bmp').textContent = Number(dados.temperatura_bmp).toFixed(2);
+            document.getElementById('umidade').textContent = Number(dados.umidade).toFixed(1);
+            document.getElementById('pressao').textContent = Number(dados.pressao).toFixed(2);
+            document.getElementById('luminosidade').textContent = dados.luminosidade;
+            document.getElementById('mq135').textContent = dados.mq135;
+            document.getElementById('data-hora').textContent = dados.data_hora.replace('T', ' ');
+
+            document.getElementById('status').textContent = 'Banco de dados conectado';
+            document.getElementById('status').style.color = '#86efac';
+
+            const totalResposta = await fetch('/api/total');
+            const totalDados = await totalResposta.json();
+            document.getElementById('total').textContent = totalDados.total_medicoes;
+        } catch (erro) {
+            console.error(erro);
+            document.getElementById('status').textContent = 'Erro ao consultar a API';
+            document.getElementById('status').style.color = '#fca5a5';
+        }
+    }
+
+    // Cria ou atualiza um gráfico usando os dados recebidos da API.
+    function desenharGrafico(idCanvas, rotulo, labels, valores) {
+        if (graficosCriados[idCanvas]) {
+            graficosCriados[idCanvas].data.labels = labels;
+            graficosCriados[idCanvas].data.datasets[0].data = valores;
+            graficosCriados[idCanvas].update();
+            return;
+        }
+
+        graficosCriados[idCanvas] = new Chart(document.getElementById(idCanvas), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: rotulo,
+                    data: valores,
+                    borderWidth: 2,
+                    pointRadius: 1,
+                    tension: 0.25
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#cbd5e1' } } },
+                scales: {
+                    x: { ticks: { color: '#94a3b8', maxTicksLimit: 7 }, grid: { color: 'rgba(255,255,255,.06)' } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,.06)' } }
+                }
+            }
+        });
+    }
+
+    // Consulta o histórico para o período selecionado e atualiza os quatro gráficos.
+    async function carregarHistorico(dias, botao) {
+        document.querySelectorAll('.periodo button').forEach(item => item.classList.remove('active'));
+        if (botao) botao.classList.add('active');
+
+        const mensagem = document.getElementById('mensagem-historico');
+        mensagem.style.display = 'block';
+        mensagem.textContent = 'Carregando histórico...';
+
+        try {
+            const resposta = await fetch(`/api/historico?dias=${dias}`);
+            if (!resposta.ok) throw new Error('Falha ao buscar histórico.');
+
+            const retorno = await resposta.json();
+            const dados = retorno.dados;
+
+            if (dados.length === 0) {
+                document.getElementById('graficos').style.display = 'none';
+                mensagem.textContent = 'Ainda não há medições registradas nesse período.';
+                return;
+            }
+
+            const labels = dados.map(item => item.minuto.replace('T', ' '));
+            desenharGrafico('grafico-temperatura', 'Temperatura DHT11 (°C)', labels, dados.map(item => Number(item.temperatura_dht)));
+            desenharGrafico('grafico-umidade', 'Umidade (%)', labels, dados.map(item => Number(item.umidade)));
+            desenharGrafico('grafico-pressao', 'Pressão (hPa)', labels, dados.map(item => Number(item.pressao)));
+            desenharGrafico('grafico-mq135', 'Leitura bruta', labels, dados.map(item => Number(item.mq135)));
+
+            mensagem.style.display = 'none';
+            document.getElementById('graficos').style.display = 'grid';
+        } catch (erro) {
+            console.error(erro);
+            mensagem.textContent = 'Não foi possível carregar o histórico. Verifique se a API está funcionando.';
+        }
+    }
+
+    // Atualiza os cards a cada 5 segundos, acompanhando a frequência do ESP32.
+    atualizarDashboard();
+    setInterval(atualizarDashboard, 5000);
+</script>
+</body>
+</html>
