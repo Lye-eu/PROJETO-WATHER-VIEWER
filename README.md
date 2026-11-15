@@ -297,10 +297,16 @@ O teste do firmware mostrou conexão à rede Wi-Fi, conexão ao broker e envio d
 - Validar e calibrar sensores conforme as necessidades de medição.
 - Preparar a aplicação para execução estável fora do ambiente de desenvolvimento.
 
-## 17. Equipe e créditos
+## Equipe de Desenvolvimento
 
-Projeto desenvolvido em grupo para a APS de Ciência da Computação - UNIP - Segundo Semestre
+Projeto desenvolvido por estudantes de Ciência da Computação da Universidade Paulista (UNIP), como parte das Atividades Práticas Supervisionadas (APS).
 
+**Integrantes:**
+- [Eduardo Godoi]
+- [Igor Antunes]
+- [Ryan Souza]
+- [Vitor Brandt]
+  
 ---
 
 **Nota:** esta documentação descreve o protótipo integrado e testado em ambiente local. Os valores e resultados de medição não substituem instrumentos meteorológicos calibrados.
