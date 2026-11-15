@@ -299,7 +299,7 @@ O teste do firmware mostrou conexão à rede Wi-Fi, conexão ao broker e envio d
 
 ## 17. Equipe e créditos
 
-Projeto desenvolvido em grupo para a APS de Ciência da Computação. Os nomes dos integrantes, a instituição, o semestre e as responsabilidades individuais podem ser adicionados aqui antes da publicação.
+Projeto desenvolvido em grupo para a APS de Ciência da Computação - UNIP - Segundo Semestre
 
 ---
 
